@@ -1,19 +1,51 @@
-<div>
-  <h1>
-    <a href="https://github.com/leon-do/eip712-generator"> Sign Typed Data Generator </a>
-  </h1>
-  <div>
-    <button type="button" onClick="signTypedData()">Sign Typed Data</button>
-    <code id="signedTypedData"></code>
-  </div>
-  <div>
-    <textarea id="jsCode" rows="10" cols="50"> </textarea>
-  </div>
-  <div>
-    <textarea id="solidityCode" rows="10" cols="50"> </textarea>
-  </div>
-</div>
+<button onclick="sign()">Sign</button>
 
-<script src="./jsTemplate.js"></script>
-<script src="./solidityTemplate.js"></script>
-<script src="./signTypedData.js"></script>
+<script>
+  async function sign() {
+    const from = await ethereum.request({ method: "eth_requestAccounts" });
+
+    const msgParams = JSON.stringify({
+      domain: {
+        // Give a user friendly name to the specific contract you are signing for.
+        name: "MyName",
+        // Just let's you know the latest version. Definitely make sure the field name is correct.
+        version: "1",
+        // Defining the chain aka Rinkeby testnet or Ethereum Main Net
+        chainId: 1,
+        // If name isn't enough add verifying contract to make sure you are establishing contracts with the proper entity
+        verifyingContract: "0x0000000000000000000000000000000000000000",
+      },
+
+      // Defining the message signing data content.
+      message: {
+        /*
+        - Anything you want. Just a JSON Blob that encodes the data you want to send
+        - No required fields
+        - This is DApp Specific
+        - Be as explicit as possible when building out the message schema.
+        */
+        myValue: 123, // myValue: 123,
+      },
+      // Refers to the keys of the *types* object below.
+      primaryType: "Message",
+      types: {
+        EIP712Domain: [
+          { name: "name", type: "string" },
+          { name: "version", type: "string" },
+          { name: "chainId", type: "uint256" },
+          { name: "verifyingContract", type: "address" },
+        ],
+        // Refer to primaryType
+        Message: [{ name: "myValue", type: "uint256" }],
+      },
+    });
+
+    const signature = await ethereum.request({
+      method: "eth_signTypedData_v4",
+      params: [from[0], msgParams],
+      from,
+    });
+
+    console.log(signature);
+  }
+</script>
